@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -6,7 +6,9 @@ import pickle
 import os.path
 
 # Scopes define the level of access you need: in this case, read-only will suffice.
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+# code for school calnendar
+school_calendar = 'c_79ef8f36425e55ff547e7616f2a80f605516a016c6fda8dc5e0139d045aba4a3@group.calendar.google.com'
 
 
 def get_calendar_service():
@@ -49,12 +51,13 @@ def count_events_today():
     # Call the Calendar API
     service = get_calendar_service()
     # 'Z' indicates UTC time
-    now = None  # change
-    tomorrow = None  # change
-
-    events_result = None  # call the right service function
-    events = None  # list; call the right function on the events_result obj
-
+    now_unformatted = datetime.utcnow()
+    now = now_unformatted.isoformat() + 'Z'
+    day = timedelta(days=1)
+    tomorrow_unformatted = now_unformatted + day
+    tomorrow = tomorrow_unformatted.isoformat() + 'Z'
+    events_result = service.events().list(calendarId=school_calendar, timeMin=now, timeMax=tomorrow, singleEvents=True).execute() # call the right service function
+    events = events_result.get('items', [])  # list; call the right function on the events_result obj
     return len(events)
 
 
@@ -97,4 +100,13 @@ def copy_calendar_to_new_account(source_calendar_id, destination_calendar_id, mo
 
 
 # Example usage:
-print(f"Number of events today: {count_events_today()}")
+
+
+def main():
+    get_calendar_service()
+    num_events = count_events_today()
+    print(num_events)
+
+
+if __name__ == '__main__':
+    main()
