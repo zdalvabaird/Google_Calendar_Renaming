@@ -8,7 +8,8 @@ import os.path
 # Scopes define the level of access you need: in this case, read-only will suffice.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 # code for school calnendar
-school_calendar = 'c_79ef8f36425e55ff547e7616f2a80f605516a016c6fda8dc5e0139d045aba4a3@group.calendar.google.com'
+source_calendar_id = 'c_79ef8f36425e55ff547e7616f2a80f605516a016c6fda8dc5e0139d045aba4a3@group.calendar.google.com'
+destination_calendar_id = 'cc3eda2c62b40667e4ea213e8c4e56deb538f6d0c4708991c840e8335e9a310c@group.calendar.google.com'
 
 
 def get_calendar_service():
@@ -56,22 +57,49 @@ def count_events_today():
     day = timedelta(days=1)
     tomorrow_unformatted = now_unformatted + day
     tomorrow = tomorrow_unformatted.isoformat() + 'Z'
-    events_result = service.events().list(calendarId=school_calendar, timeMin=now, timeMax=tomorrow, singleEvents=True).execute() # call the right service function
+    events_result = service.events().list(calendarId=source_calendar_id, timeMin=now, timeMax=tomorrow, singleEvents=True).execute() # call the right service function
     events = events_result.get('items', [])  # list; call the right function on the events_result obj
-    return len(events)
+    return (len(events)), (events)
 
 
-def get_next_event_details():
+def get_event_details(event):
     """
-    Retrieves the details of the next event on the user's calendar.
+    Retrieves the details of the selected event on the user's calendar.
+
+    Parameters:
+        event: The event that is being taken in
 
     Returns:
-        A dictionary containing the details of the next event, such as start time and summary.
+        A dictionary containing the details of the event, such as start time and summary.
     """
-    pass
+    
+    start = event['start'].get('dateTime', event['start'].get('date'))
+    end = event['end'].get('dateTime', event['end'].get('date'))
+    summary = event['summary']
+    if len(start) == 10:
+        event_details = {
+            'summary': summary,
+            'start': {
+                'date': start,
+            },
+            'end': {
+                'date': end,
+            },
+        }
+    else:
+        event_details = {
+            'summary': summary,
+            'start': {
+                'dateTime': start,
+            },
+            'end': {
+                'dateTime': end,
+            },
+        }
+    return event_details
 
 
-def add_event(event_details):
+def add_event(event_details, service):
     """
     Adds an event to the user's calendar with the given event details.
 
@@ -81,7 +109,9 @@ def add_event(event_details):
     Returns:
         The event creation response from the API.
     """
-    pass
+    
+    new_event = service.events().insert(calendarId=destination_calendar_id, body=event_details).execute()
+    return ('Event created: %s' % (new_event.get('htmlLink')))
 
 
 def copy_calendar_to_new_account(source_calendar_id, destination_calendar_id, modify_event_name=True):
@@ -96,16 +126,18 @@ def copy_calendar_to_new_account(source_calendar_id, destination_calendar_id, mo
     Returns:
         A list of responses from the API for each event copied.
     """
-    pass
+    
 
-
-# Example usage:
 
 
 def main():
-    get_calendar_service()
-    num_events = count_events_today()
+    service = get_calendar_service()
+    num_events, events = count_events_today()
     print(num_events)
+    for event in events:
+        event_details = get_event_details(event)
+        print(event_details)
+        add_event(event_details, service)
 
 
 if __name__ == '__main__':
