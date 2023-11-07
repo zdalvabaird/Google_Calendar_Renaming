@@ -1,15 +1,16 @@
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from progress.spinner import MoonSpinner
 import pickle
 import os.path
 
-# Scopes define the level of access you need: in this case, read-only will suffice.
+# Scopes define the level of access you need:
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 # code for school calnendar
 source_calendar_id = 'c_79ef8f36425e55ff547e7616f2a80f605516a016c6fda8dc5e0139d045aba4a3@group.calendar.google.com'
-destination_calendar_id = 'cc3eda2c62b40667e4ea213e8c4e56deb538f6d0c4708991c840e8335e9a310c@group.calendar.google.com'
+destination_calendar_id = '2e97f3db23cd8130eeafd2002d200e5095496f4d1819ac59de2540d2ef330c13@group.calendar.google.com'
 
 
 def get_calendar_service():
@@ -41,6 +42,32 @@ def get_calendar_service():
     service = build('calendar', 'v3', credentials=creds)
     return service
 
+def retrieve_events(num_of_days, calendar):
+    """
+    Retrieves events from calendar in a specified period of time.
+
+    Parameters:
+        num_of_days (int): number of days to take the events from
+
+    Returns:
+        A list of events
+    """
+
+    service = get_calendar_service()
+    # Creates today's date in iso format, needs to be unformatted first to add timedelta
+    today_unformatted = datetime.utcnow()
+    today = today_unformatted.isoformat() + 'Z'
+    period = timedelta(days=num_of_days)
+    # Creating end date, adding the unformatted today date with the period, then formatting the end point
+    end_point_unformatted = today_unformatted + period
+    end_point = end_point_unformatted.isoformat() + 'Z'
+    # Selects events with given attributes
+    events_range = service.events().list(calendarId=calendar, timeMin=today, timeMax=end_point, singleEvents=True).execute()
+    # Adds the items of that event into a list
+    events_list = events_range.get('items', [])
+    return events_list
+
+
 
 def count_events_today():
     """
@@ -49,17 +76,9 @@ def count_events_today():
     Returns:
         An integer count of today's events.
     """
-    # Call the Calendar API
-    service = get_calendar_service()
-    # 'Z' indicates UTC time
-    now_unformatted = datetime.utcnow()
-    now = now_unformatted.isoformat() + 'Z'
-    day = timedelta(days=1)
-    tomorrow_unformatted = now_unformatted + day
-    tomorrow = tomorrow_unformatted.isoformat() + 'Z'
-    events_result = service.events().list(calendarId=source_calendar_id, timeMin=now, timeMax=tomorrow, singleEvents=True).execute() # call the right service function
-    events = events_result.get('items', [])  # list; call the right function on the events_result obj
-    return (len(events)), (events)
+    # Uisng retrieve events function to find events between now and 1 day from now
+    events = retrieve_events(1, source_calendar_id)
+    return len(events)
 
 
 def get_event_details(event):
@@ -67,18 +86,22 @@ def get_event_details(event):
     Retrieves the details of the selected event on the user's calendar.
 
     Parameters:
-        event: The event that is being taken in
+        event (list): The event that is being taken in
 
     Returns:
         A dictionary containing the details of the event, such as start time and summary.
     """
-    
+    # Gets start and end dateTime or date depending on if it is a all day or timed event
     start = event['start'].get('dateTime', event['start'].get('date'))
     end = event['end'].get('dateTime', event['end'].get('date'))
-    summary = event['summary']
+    summary = event['summary']  # Summary is the name of the event
+    eventId = event['id']
+    # If statement filtering out dateTime events from date events, all day events will have 10 characters in start date
+    # Creates dictionary with event details
     if len(start) == 10:
         event_details = {
             'summary': summary,
+            'eventId': eventId,
             'start': {
                 'date': start,
             },
@@ -89,6 +112,7 @@ def get_event_details(event):
     else:
         event_details = {
             'summary': summary,
+            'eventId': eventId,
             'start': {
                 'dateTime': start,
             },
@@ -99,7 +123,7 @@ def get_event_details(event):
     return event_details
 
 
-def add_event(event_details, service):
+def add_event(event_details):
     """
     Adds an event to the user's calendar with the given event details.
 
@@ -109,35 +133,72 @@ def add_event(event_details, service):
     Returns:
         The event creation response from the API.
     """
-    
+    service = get_calendar_service()
+    # creates new event with characteristics from dictionary then returns 'event created' message with link
     new_event = service.events().insert(calendarId=destination_calendar_id, body=event_details).execute()
     return ('Event created: %s' % (new_event.get('htmlLink')))
 
 
-def copy_calendar_to_new_account(source_calendar_id, destination_calendar_id, modify_event_name=True):
+def delete_all(num_of_days):
+    """
+    Deletes all of the events in the number of days to allow for new events to be created
+    
+    Parameters:
+        num_of_days (int): Number of days to delete future data
+        
+    """
+    service = get_calendar_service()
+    events_list = retrieve_events(num_of_days, destination_calendar_id)
+    # loop deleting all events that are currently in destination calendar in day range
+
+    for event in events_list:
+        event_details = get_event_details(event)
+        service.events().delete(calendarId=destination_calendar_id, eventId=event_details['eventId']).execute()
+
+
+
+
+def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
     """
     Copies all events from the source calendar to the destination calendar. Optionally modifies the event names.
 
     Parameters:
-        source_calendar_id (str): The calendar ID of the source Google Calendar.
-        destination_calendar_id (str): The calendar ID of the destination Google Calendar.
+        schedule (dict): Dictionary containing the block to class conversions.
+        num_of_days (int): Number of days to copy into new calendar.
         modify_event_name (bool): If True, modifies the event names during the copy.
 
     Returns:
         A list of responses from the API for each event copied.
     """
-    
+    delete_all(num_of_days)
+    api_response_list = []
+    events_list = retrieve_events(num_of_days, source_calendar_id)
+    # loop depending on if you need to modify the event name, if so, uses the schedule dictionary to change the blocks into classes
+    for event in events_list:
+        event_details = get_event_details(event)
+        if modify_event_name:
+            if event_details['summary'] in schedule.keys():
+                event_details['summary'] = schedule[event_details['summary']]
+        api_response = add_event(event_details)  # sends api responses into list to be checked for errors
+        api_response_list.append(api_response)
 
+    return api_response_list
 
 
 def main():
-    service = get_calendar_service()
-    num_events, events = count_events_today()
+    schedule = {
+        'A Block': 'Photography 1',
+        'B Block': 'English 11',
+        'C Block': 'Honors Precalculus',
+        'D Block': 'Spanish 4',
+        'E Block': 'Advanced Chemistry',
+        'F Block': 'Advanced U.S. History',
+        'G Block': 'Honors SERC 11: Research',
+    }
+    num_of_days = 40
+    num_events = count_events_today()
     print(num_events)
-    for event in events:
-        event_details = get_event_details(event)
-        print(event_details)
-        add_event(event_details, service)
+    copy_calendar_to_new_account(schedule, num_of_days, True)
 
 
 if __name__ == '__main__':
