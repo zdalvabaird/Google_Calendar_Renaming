@@ -199,6 +199,7 @@ def main():
     print(num_events)
     copy_calendar_to_new_account(schedule, num_of_days, True)
 
+## to run paste "/Users/zdalva-baird/anaconda3/bin/python /Users/zdalva-baird/Documents/Python/Google_Calendar_Renaming/calendar_pull_push.py"
 
 if __name__ == '__main__':
     main()
