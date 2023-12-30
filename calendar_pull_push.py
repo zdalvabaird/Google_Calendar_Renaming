@@ -99,7 +99,8 @@ def get_event_details(event):
     # Creates dictionary with event details
     if len(start) == 10:
         event_details = {
-            'summary': summary,
+            'summary': summary,  ### you can do this cleaner - don't repeat code that's the same in the if and else
+            ### add description of event
             'eventId': eventId,
             'start': {
                 'date': start,
@@ -146,6 +147,7 @@ def delete_all(num_of_days):
         num_of_days (int): Number of days to delete future data
         
     """
+    ### do this safer - don't add repeat events, just check if they're there !!! in case user adds events individually ###
     service = get_calendar_service()
     events_list = retrieve_events(num_of_days, destination_calendar_id)
     # loop deleting all events that are currently in destination calendar in day range
@@ -169,7 +171,7 @@ def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
     Returns:
         A list of responses from the API for each event copied.
     """
-    delete_all(num_of_days)
+    delete_all(num_of_days)  ### do this safer !!! just check if event is already there
     api_response_list = []
     events_list = retrieve_events(num_of_days, source_calendar_id)
     # loop depending on if you need to modify the event name, if so, uses the schedule dictionary to change the blocks into classes
@@ -185,7 +187,7 @@ def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
 
 
 def main():
-    schedule = {
+    schedule = {   ### this will have to be input by the user once, and editable
         'A Block': 'Photography 1',
         'B Block': 'English 11',
         'C Block': 'Honors Precalculus',
