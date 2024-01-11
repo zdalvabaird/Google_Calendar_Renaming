@@ -196,7 +196,7 @@ def main():
         'F Block': 'Advanced U.S. History',
         'G Block': 'Honors SERC 11: Research',
     }
-    num_of_days = 40
+    num_of_days = 50
     num_events = count_events_today()
     print(num_events)
     copy_calendar_to_new_account(schedule, num_of_days, True)
