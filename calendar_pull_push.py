@@ -4,6 +4,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import pickle
 import os.path
+from tqdm.auto import tqdm
 
 # Scopes define the level of access you need:
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -175,7 +176,7 @@ def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
     api_response_list = []
     events_list = retrieve_events(num_of_days, source_calendar_id)
     # loop depending on if you need to modify the event name, if so, uses the schedule dictionary to change the blocks into classes
-    for event in events_list:
+    for event in tqdm(events_list):
         event_details = get_event_details(event)
         if modify_event_name:
             if event_details['summary'] in schedule.keys():
@@ -188,7 +189,7 @@ def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
 
 def main():
     schedule = {   ### this will have to be input by the user once, and editable
-        'A Block': 'Photography 1',
+        'A Block': 'Photography 2',
         'B Block': 'English 11',
         'C Block': 'Honors Precalculus',
         'D Block': 'Spanish 4',
@@ -196,7 +197,7 @@ def main():
         'F Block': 'Advanced U.S. History',
         'G Block': 'Honors SERC 11: Research',
     }
-    num_of_days = 50
+    num_of_days = 30
     num_events = count_events_today()
     print(num_events)
     copy_calendar_to_new_account(schedule, num_of_days, True)
