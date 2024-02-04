@@ -153,7 +153,7 @@ def delete_all(num_of_days):
     events_list = retrieve_events(num_of_days, destination_calendar_id)
     # loop deleting all events that are currently in destination calendar in day range
 
-    for event in events_list:
+    for event in tqdm(events_list):
         event_details = get_event_details(event)
         service.events().delete(calendarId=destination_calendar_id, eventId=event_details['eventId']).execute()
 
