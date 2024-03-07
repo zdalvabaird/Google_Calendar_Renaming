@@ -183,7 +183,7 @@ def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
                 event_details['summary'] = schedule[event_details['summary']]
         api_response = add_event(event_details)  # sends api responses into list to be checked for errors
         api_response_list.append(api_response)
-        
+
     return api_response_list
 
 
