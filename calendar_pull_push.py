@@ -68,19 +68,6 @@ def retrieve_events(num_of_days, calendar):
     return events_list
 
 
-
-def count_events_today():
-    """
-    Counts how many calendar events the user has today.
-
-    Returns:
-        An integer count of today's events.
-    """
-    # Uisng retrieve events function to find events between now and 1 day from now
-    events = retrieve_events(1, source_calendar_id)
-    return len(events)
-
-
 def get_event_details(event):
     """
     Retrieves the details of the selected event on the user's calendar.
@@ -100,25 +87,13 @@ def get_event_details(event):
     # Creates dictionary with event details
     if len(start) == 10:
         event_details = {
-            'summary': summary,  ### you can do this cleaner - don't repeat code that's the same in the if and else
-            ### add description of event
-            'eventId': eventId,
-            'start': {
-                'date': start,
-            },
-            'end': {
-                'date': end,
-            },
-        }
-    else:
-        event_details = {
             'summary': summary,
             'eventId': eventId,
             'start': {
-                'dateTime': start,
+                'dateTime' if len(start) > 10 else 'date': start,
             },
             'end': {
-                'dateTime': end,
+                'dateTime' if len(end) > 10 else 'date': end,
             },
         }
     return event_details
