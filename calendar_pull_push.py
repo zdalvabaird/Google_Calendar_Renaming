@@ -85,17 +85,17 @@ def get_event_details(event):
     eventId = event['id']
     # If statement filtering out dateTime events from date events, all day events will have 10 characters in start date
     # Creates dictionary with event details
-    if len(start) == 10:
-        event_details = {
-            'summary': summary,
-            'eventId': eventId,
-            'start': {
-                'dateTime' if len(start) > 10 else 'date': start,
-            },
-            'end': {
-                'dateTime' if len(end) > 10 else 'date': end,
-            },
-        }
+
+    event_details = {
+        'summary': summary,
+        'eventId': eventId,
+        'start': {
+            'dateTime' if len(start) > 10 else 'date': start,
+        },
+        'end': {
+            'dateTime' if len(end) > 10 else 'date': end,
+        },
+    }
     return event_details
 
 
@@ -164,17 +164,15 @@ def copy_calendar_to_new_account(schedule, num_of_days, modify_event_name=True):
 
 def main():
     schedule = {   ### this will have to be input by the user once, and editable
-        'A Block': 'Photography 2',
-        'B Block': 'English 11',
-        'C Block': 'Honors Precalculus',
-        'D Block': 'Spanish 4',
-        'E Block': 'Advanced Chemistry',
-        'F Block': 'Advanced U.S. History',
-        'G Block': 'Honors SERC 11: Research',
+        'A block': 'Adv Calc 1 & 2',
+        'B block': 'Adv Minds on Edge',
+        'C block': 'Adv Biology',
+        'D block': 'Adv Microeconomics',
+        'E block': 'Adv Python Programming',
+        'F block': 'Free',
+        'G block': 'Photography 3',
     }
     num_of_days = 30
-    num_events = count_events_today()
-    print(num_events)
     copy_calendar_to_new_account(schedule, num_of_days, True)
 
 ## to run paste "/Users/zdalva-baird/anaconda3/bin/python /Users/zdalva-baird/Documents/Python/Google_Calendar_Renaming/calendar_pull_push.py"
